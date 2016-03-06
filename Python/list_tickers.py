@@ -22,7 +22,7 @@ def obtain_list_of_db_tickers():
     return [(d[0], d[1]) for d in data]
 
 def get_daily_historic_data_yahoo(ticker,
-                      start_date=(2000,1,1),
+                      start_date=(2016,1,1),
                       end_date=datetime.date.today().timetuple()[0:3]):
     """Obtains data from Yahoo Finance returns and a list of tuples.
 
