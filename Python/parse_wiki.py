@@ -1,37 +1,59 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# version 0.01
+# corrected url get
 
 import datetime
 import lxml.html
 import MySQLdb as mdb
 
+from urllib2 import urlopen
 from math import ceil
 
 
 def obtain_parse_wiki_snp500():
   """Download and parse the Wikipedia list of S&P500 
   constituents using requests and libxml.
-
   Returns a list of tuples for to add to MySQL."""
 
   # Stores the current time, for the created_at record
   now = datetime.datetime.utcnow()
 
   # Use libxml to download the list of S&P500 companies and obtain the symbol table
-  page = lxml.html.parse('http://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
+
+  page = urlopen('http://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
+  page = lxml.html.parse(page)
+
+  # original - does not work  page = lxml.html.parse('http://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
+
   symbolslist = page.xpath('//table[1]/tr')[1:]
 
   # Obtain the symbol information for each row in the S&P500 constituent table
   symbols = []
   for symbol in symbolslist:
-    tds = symbol.getchildren()
-    sd = {'ticker': tds[0].getchildren()[0].text,
-        'name': tds[1].getchildren()[0].text,
-        'sector': tds[3].text}
-    # Create a tuple (for the DB format) and append to the grand list
-    symbols.append( (sd['ticker'], 'stock', sd['name'], 
-      sd['sector'], 'USD', now, now) )
+    try:
+      tds = symbol.getchildren()
+      sd = {'ticker': tds[0].getchildren()[0].text,
+            'name': tds[1].getchildren()[0].text,
+            'sector': tds[2].text}
+      symbols.append((sd['ticker'], 'stock', sd['name'],
+                      sd['sector'], 'USD', now, now))
+
+    except IndexError as e:
+      print('Error: ', e)
+
   return symbols
+  
+# symbols = []
+#   for symbol in symbolslist:
+#     tds = symbol.getchildren()
+#     sd = {'ticker': tds[0].getchildren()[0].text,
+#           'name': tds[1].getchildren()[0].text,
+#           'sector': tds[3].text}
+#     # Create a tuple (for the DB format) and append to the grand list
+#     symbols.append( (sd['ticker'], 'stock', sd['name'], 
+#                      sd['sector'], 'USD', now, now) )
+#   return symbols
 
 def insert_snp500_symbols(symbols):
   """Insert the S&P500 symbols into the MySQL database."""
@@ -57,6 +79,12 @@ def insert_snp500_symbols(symbols):
     for i in range(0, int(ceil(len(symbols) / 100.0))):
       cur.executemany(final_str, symbols[i*100:(i+1)*100-1])
 
+def check_table(symbols):
+  for symbol in symbols:
+    print symbol
+
+
 if __name__ == "__main__":
   symbols = obtain_parse_wiki_snp500()
+#  check_table(symbols)
   insert_snp500_symbols(symbols)
