@@ -74,10 +74,16 @@ def insert_snp500_symbols(symbols):
   # Using the MySQL connection, carry out an INSERT INTO for every symbol
   with con: 
     cur = con.cursor()
+    cur.executemany(final_str, symbols)
     # This line avoids the MySQL MAX_PACKET_SIZE
     # Although of course it could be set larger!
-    for i in range(0, int(ceil(len(symbols) / 100.0))):
-      cur.executemany(final_str, symbols[i*100:(i+1)*100-1])
+#    for i in range(0, int(ceil(len(symbols) / 100.0))):
+#      cur.executemany(final_str, symbols[i*100:(i+1)*100-1])
+ 
+
+#    for i in range(0, int(ceil(len(symbols) / 100.0))):
+
+
 
 def check_table(symbols):
   for symbol in symbols:
@@ -86,5 +92,5 @@ def check_table(symbols):
 
 if __name__ == "__main__":
   symbols = obtain_parse_wiki_snp500()
-  check_table(symbols)
-#  insert_snp500_symbols(symbols)
+#  check_table(symbols)
+  insert_snp500_symbols(symbols)
